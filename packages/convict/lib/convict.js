@@ -260,7 +260,7 @@ function normalizeSchema(name, node, props, fullName, env, argv, sensitive) {
         Object.prototype.toString.call(new Format()),
       'must be of type ' + Format.name);
     };
-    o.format = Format.name.toLowerCase();
+    //o.format = Format.name.toLowerCase();
 
   } else if (typeof format === 'string') {
     // store declared type
