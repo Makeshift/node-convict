@@ -501,14 +501,14 @@ let convict = function convict(def, opts) {
      * Exports the schema as JSON.
      */
     getSchema: function() {
-      return unflatten(flatten(JSON.parse(JSON.stringify(this._schema)), true));
+      return unflatten(flatten(JSON.parse(JSON.stringify(this._schema)).properties, true));
     },
 
     /**
      * Exports the schema as a JSON string
      */
     getSchemaString: function() {
-      return JSON.stringify(unflatten(flatten(this._schema, true)), null, 2);
+      return JSON.stringify(unflatten(flatten(this._schema, true)).properties, null, 2);
     },
 
     /**
