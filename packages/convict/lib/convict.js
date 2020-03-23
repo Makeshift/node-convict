@@ -72,7 +72,19 @@ const parsers_registry = { '*': JSON.parse };
 const ALLOWED_OPTION_STRICT = 'strict';
 const ALLOWED_OPTION_WARN = 'warn';
 
+function unflatten(data) {
+  let result = {}
+  for (let i in data) {
+    let keys = i.split('.')
+    keys.reduce(function(r, e, j) {
+      return r[e] || (r[e] = isNaN(Number(keys[j + 1])) ? (keys.length - 1 == j ? data[i] : {}) : [])
+    }, result)
+  }
+  return result
+}
+
 function flatten(obj, useProperties) {
+  if (typeof obj === "undefined") return {};
   let stack = Object.keys(obj);
   let key;
 
@@ -360,6 +372,9 @@ function isObj(o) { return (typeof o === 'object' && o !== null); }
 function overlay(from, to, schema) {
   Object.keys(from).forEach(function(k) {
     // leaf
+    if (k === "sources") {
+      console.log(k)
+    }
     if (Array.isArray(from[k]) || !isObj(from[k]) || !schema || schema.format === 'object') {
       to[k] = coerce(k, from[k], schema);
     } else {
@@ -397,10 +412,10 @@ function coerce(k, v, schema, instance) {
   // magic coerceing
   let format = getFormat(schema, k);
 
-  if (typeof v === 'string') {
+  //if (typeof v === 'string') {
     if (converters.has(format)) {
-      return converters.get(format)(v, instance, k);
-    }
+      return converters.get(format)(v, instance, k, getOriginalSchema(schema)[k]);
+    //}
     switch (format) {
     case 'port':
     case 'nat':
@@ -428,6 +443,15 @@ function loadFile(path) {
   // TODO Get rid of the sync call
   // eslint-disable-next-line no-sync
   return parse(fs.readFileSync(path, 'utf-8'));
+}
+
+function getOriginalSchema(schema) {
+  let flatSchema = flatten(JSON.parse(JSON.stringify(schema)));
+  let cleanFlatSchema = {};
+  Object.keys(flatSchema).forEach(key => {
+    cleanFlatSchema[key.replace(/_cvtProperties\./g, "")] = flatSchema[key];
+  })
+  return unflatten(cleanFlatSchema);
 }
 
 function walk(obj, path, initializeMissing) {
@@ -501,14 +525,14 @@ let convict = function convict(def, opts) {
      * Exports the schema as JSON.
      */
     getSchema: function() {
-      return unflatten(flatten(JSON.parse(JSON.stringify(this._schema)).properties, true));
+      return getOriginalSchema(this._schema);
     },
 
     /**
      * Exports the schema as a JSON string
      */
     getSchemaString: function() {
-      return JSON.stringify(unflatten(flatten(this._schema, true)).properties, null, 2);
+      return JSON.stringify(this._schema, null, 2);
     },
 
     /**
